@@ -1,18 +1,30 @@
 module Secured
   def authenticate_user!
-    # Bearer xxxxxx
-    token_regex = /Bearer (\w+)/
-    # leer HEADER de auth
-    headers = request.headers
-    # verificar que sea valido
-    if headers['Authorization'].present? && headers['Authorization'].match(token_regex)
-      token = headers['Authorization'].match(token_regex)[1]
-      # debemos verificar que el token corresponda a un user
-      if(Current.user = User.find_by_auth_token(token))
-        return
+    if(Current.user = user_from_token)
+      return
+    end
+    render json: {error: 'Unauthorized'}, status: :unauthorized
+  rescue JWT::VerificationError, JWT::DecodeError
+    render json: {error: 'Unauthorized'}, status: :unauthorized
+  end
+
+  def user_from_token
+    token = get_token_from_auth_header
+    payload = JsonWebToken.verify(token).first.with_indifferent_access
+    if payload.present?
+      User.find_or_create_by(email: payload[:email]) do |user|
+        user.name = payload[:name]
       end
     end
+  end
 
-    render json: {error: 'Unauthorized'}, status: :unauthorized
+  def get_token_from_auth_header
+    # Bearer xxxxxx
+    token_regex = /Bearer (.+)/
+    # leer HEADER de auth
+    headers = request.headers
+    if headers['Authorization'].present? && headers['Authorization'].match(token_regex)
+      headers['Authorization'].match(token_regex)[1]
+    end
   end
 end
