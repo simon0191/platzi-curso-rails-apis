@@ -9,8 +9,8 @@
     window.addEventListener('load', function() {
 
       var webAuth = new auth0.WebAuth({
-        domain: 'simon0191.auth0.com',
-        clientID: 'MH2k1IeuaRhWBbm6kq5wV9g1n7w7Bvfa',
+        domain: '<%= Rails.application.credentials.auth0[:domain] %>',
+        clientID: '<%= Rails.application.credentials.auth0[:client_id] %>',
         responseType: 'token id_token',
         scope: 'openid profile email',
         redirectUri: 'https://jwt.io'
